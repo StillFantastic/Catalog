@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, url_for
+from flask import Flask, render_template, redirect, request, url_for, jsonify
 import psycopg2
 import random
 import string
@@ -9,18 +9,20 @@ import httplib2
 import json
 from flask import make_response
 import requests
-import time
 
 
 app = Flask(__name__)
 
 
+# Columns in each table
 restaurants_columns = ["id", "name", "description", "picture", "user_id"]
 menus_columns = ["id", "name", "price", "description", "picture",
                  "restaurnt_id"]
 
 
 def connectdb(dbname="catalog"):
+    """connect to databaase"""
+
     try:
         db = psycopg2.connect("dbname=" + dbname)
         return db
@@ -29,6 +31,8 @@ def connectdb(dbname="catalog"):
 
 
 def restaurant_name_exist(restaurant_name):
+    """check if the restaurant is in database"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants WHERE name=(%s);", (restaurant_name,))
@@ -41,6 +45,8 @@ def restaurant_name_exist(restaurant_name):
 
 
 def menu_id_exist(menu_id):
+    """check if the menu is in database"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM menus WHERE id=(%s);", (menu_id,))
@@ -53,11 +59,15 @@ def menu_id_exist(menu_id):
 
 
 def authorized(name, user_id):
+    """check whether the logged in user has authorization"""
+
     return name == user_id
 
 
 @app.route("/restaurant/")
 def showRestaurants():
+    """list all the restaurants"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants ORDER BY id ASC;")
@@ -69,15 +79,35 @@ def showRestaurants():
                            login_session=login_session)
 
 
+@app.route("/restaurant/JSON/")
+def showRestaurantsJSON():
+    """list all the restaurants in JSON format"""
+
+    db = connectdb()
+    c = db.cursor()
+    c.execute("SELECT * FROM restaurants ORDER BY id ASC;")
+    restaurants = c.fetchall()
+    db.close()
+    restaurants_dict = []
+    for restaurant in restaurants:
+        my_dict = {}
+        for i in range(len(restaurants_columns)):
+            my_dict[restaurants_columns[i]] = restaurant[i]
+        restaurants_dict.append(my_dict)
+    return jsonify(restaurants=restaurants_dict)
+
+
 @app.route("/restaurant/<restaurant_name>/")
 def showMenus(restaurant_name):
+    """list all the menus"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants WHERE name=(%s);", (restaurant_name,))
     restaurant = c.fetchone()
     if restaurant is None:
         return redirect("/restaurant/")
-    c.execute("SELECT * FROM menus WHERE restaurant_id=(%s);",
+    c.execute("SELECT * FROM menus WHERE restaurant_id=(%s) ORDER BY id ASC;",
               (restaurant[0],))
     menus = c.fetchall()
     db.close()
@@ -88,8 +118,33 @@ def showMenus(restaurant_name):
                            login_session=login_session)
 
 
+@app.route("/restaurant/<restaurant_name>/JSON")
+def showMenusJSON(restaurant_name):
+    """list all the menus in JSON format"""
+
+    db = connectdb()
+    c = db.cursor()
+    c.execute("SELECT * FROM restaurants WHERE name=(%s);", (restaurant_name,))
+    restaurant = c.fetchone()
+    if restaurant is None:
+        return redirect("/restaurant/")
+    c.execute("SELECT * FROM menus WHERE restaurant_id=(%s) ORDER BY id ASC;",
+              (restaurant[0],))
+    menus = c.fetchall()
+    db.close()
+    menus_dict = []
+    for menu in menus:
+        my_dict = {}
+        for i in range(len(menus_columns)):
+            my_dict[menus_columns[i]] = menu[i]
+        menus_dict.append(my_dict)
+    return jsonify(menus=menus_dict)
+
+
 @app.route("/restaurant/<restaurant_name>/<int:menu_id>/")
 def showSingleMenu(restaurant_name, menu_id):
+    """show particular menu"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants WHERE name=(%s);",
@@ -99,6 +154,8 @@ def showSingleMenu(restaurant_name, menu_id):
         return redirect("/restaurant/")
     c.execute("SELECT * FROM menus WHERE id=(%s);", (menu_id,))
     menu = c.fetchone()
+    if menu is None:
+        return redirect(url_for("showMenus", restaurant_name=restaurant[1]))
     db.close()
     return render_template("showSingleMenu.html",
                            restaurant=restaurant,
@@ -107,8 +164,32 @@ def showSingleMenu(restaurant_name, menu_id):
                            login_session=login_session)
 
 
+@app.route("/restaurant/<restaurant_name>/<int:menu_id>/JSON")
+def showSingleMenuJSON(restaurant_name, menu_id):
+    """show particular menu in JSON format"""
+
+    db = connectdb()
+    c = db.cursor()
+    c.execute("SELECT * FROM restaurants WHERE name=(%s);",
+              (restaurant_name,))
+    restaurant = c.fetchone()
+    if restaurant is None:
+        return redirect("/restaurant/")
+    c.execute("SELECT * FROM menus WHERE id=(%s);", (menu_id,))
+    menu = c.fetchone()
+    if menu is None:
+        return redirect(url_for("showMenus", restaurant_name=restaurant[1]))
+    db.close()
+    menu_dict = {}
+    for i in range(len(menus_columns)):
+        menu_dict[menus_columns[i]] = menu[i]
+    return jsonify(menu=menu_dict)
+
+
 @app.route("/restaurant/new/", methods=["get", "post"])
 def newRestaurant():
+    """add a new restaurant"""
+
     if login_session.get("user_id") is None:
         return redirect(url_for("showRestaurants"))
 
@@ -144,6 +225,8 @@ def newRestaurant():
 
 @app.route("/restaurant/<restaurant_name>/new", methods=["get", "post"])
 def newMenu(restaurant_name):
+    """add a new menu for the restaurant"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants WHERE name=(%s)", (restaurant_name,))
@@ -189,6 +272,8 @@ def newMenu(restaurant_name):
 
 @app.route("/restaurant/<restaurant_name>/edit", methods=["get", "post"])
 def editRestaurant(restaurant_name):
+    """edit information of the restaurant"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM restaurants WHERE name=(%s);", (restaurant_name,))
@@ -231,6 +316,8 @@ def editRestaurant(restaurant_name):
 
 @app.route("/restaurant/<restaurant_name>/delete", methods=["get", "post"])
 def deleteRestaurant(restaurant_name):
+    """delete restaurant"""
+
     restaurant = restaurant_name_exist(restaurant_name)
     if not restaurant:
         return redirect(url_for("showRestaurants"))
@@ -254,6 +341,8 @@ def deleteRestaurant(restaurant_name):
 @app.route("/restaurant/<restaurant_name>/<int:menu_id>/edit",
            methods=["get", "post"])
 def editMenu(restaurant_name, menu_id):
+    """edit information of the menu"""
+
     restaurant = restaurant_name_exist(restaurant_name)
     menu = menu_id_exist(menu_id)
     if restaurant is None or menu is None:
@@ -301,6 +390,8 @@ def editMenu(restaurant_name, menu_id):
 @app.route("/restaurant/<restaurant_name>/<int:menu_id>/delete",
            methods=["post", "get"])
 def deleteMenu(restaurant_name, menu_id):
+    """delete particular menu"""
+
     restaurant = restaurant_name_exist(restaurant_name)
     menu = menu_id_exist(menu_id)
     if restaurant is None or menu is None:
@@ -329,6 +420,8 @@ def deleteMenu(restaurant_name, menu_id):
 
 @app.route("/login/")
 def login():
+    """render a login page"""
+
     if login_session.get("user_id"):
         return redirect(url_for("showRestaurants"))
     state = "".join(random.choice(string.ascii_uppercase + string.digits)
@@ -340,6 +433,8 @@ def login():
 
 
 def getUserID(email):
+    """check whether the email exists in database or not"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("SELECT * FROM users where email=(%s);", (email,))
@@ -351,6 +446,8 @@ def getUserID(email):
 
 
 def createUser(login_session):
+    """create a new user"""
+
     db = connectdb()
     c = db.cursor()
     c.execute("""INSERT INTO users (name, picture, email)
@@ -367,6 +464,8 @@ def createUser(login_session):
 
 @app.route("/gconnect", methods=["post"])
 def gconnect():
+    """user login through google"""
+
     client_id = json.loads(open("google_client_secrets.json", "r").read())
     client_id = client_id["web"]["client_id"]
 
@@ -454,6 +553,8 @@ def gconnect():
 
 @app.route("/fbconnect", methods=["post"])
 def fbconnect():
+    """user login through facebook"""
+
     if request.args.get("state") != login_session["state"]:
         response = make_response(json.dumps("Invalid state parameter."), 401)
         response.headers["Content-Type"] = "application/json"
@@ -507,6 +608,8 @@ name,id,email""" % token
 
 @app.route("/logout/")
 def logout():
+    """logout"""
+
     if login_session["provider"] == "google":
         access_token = login_session.get("access_token")
         if access_token is None:
