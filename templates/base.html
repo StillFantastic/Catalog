@@ -35,7 +35,7 @@
 							{% else %}
 								<li><a href="/logout" class="dropdown-item">Logout</a></li>
 							{% endif %}
-							{% if inHome %}
+							{% if inHome and login_session["user_id"] %}
 								<li><a href="{{ url_for('newRestaurant') }}" class="dropdown-item">New Restaurant</a></li>
 							{% elif inRestaurant and login_session["user_id"] == restaurant[4] %}
 								<li><a href="{{ url_for('newMenu', restaurant_name=restaurant[1]) }}" class="dropdown-item">New Menu</a></li>
