@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<!-- bootstrap stuff -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		
+		<!-- css -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+		<!-- google font -->
+		<link href="https://fonts.googleapis.com/css?family=K2D" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
+		<link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet"> 
+	</head>
+
+	<body>
+		<div class="container header">
+			<div class="row">
+				<div class="col-md-2 col-md-offset-1">
+					<a href="/restaurant" class="header-elem">
+						Catalog
+					</a>
+				</div>
+				<div class="col-md-2 col-md-offset-7">
+					<div class="dropdown header-btn">
+						<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<span class="glyphicon glyphicon-chevron-down"></span>
+						</button>
+						<ul class="dropdown-menu" aria-labelledby="dropdownButton">
+							{% if not login_session["user_id"] %}
+								<li><a href="/login" class="dropdown-item">Login</a></li>
+							{% else %}
+								<li><a href="/logout" class="dropdown-item">Logout</a></li>
+							{% endif %}
+							{% if inHome %}
+								<li><a href="{{ url_for('newRestaurant') }}" class="dropdown-item">New Restaurant</a></li>
+							{% elif inRestaurant and login_session["user_id"] == restaurant[4] %}
+								<li><a href="{{ url_for('newMenu', restaurant_name=restaurant[1]) }}" class="dropdown-item">New Menu</a></li>
+								<li><a href="{{ url_for('editRestaurant', restaurant_name=restaurant[1]) }}" class="dropdown-item">Edit Restaurant</a></li>
+								<li><a href="{{ url_for('deleteRestaurant', restaurant_name=restaurant[1]) }}" class="dropdown-item">Delete Restaurant</a></li>
+							{% elif inMenu and login_session["user_id"] == restaurant[4] %}
+								<li><a href="{{ url_for('editMenu', restaurant_name=restaurant[1], menu_id=menu[0]) }}" class="dropdown-item">Edit Menu</a></li>
+								<li><a href="{{ url_for('deleteMenu', restaurant_name=restaurant[1], menu_id=menu[0]) }}" class="dropdown-item">Delete Menu</a></li>
+							{% endif %}
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% block content %}
+		{% endblock %}
+	</body>
+</html>

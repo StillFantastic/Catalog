@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="container main">
+		{% for i in range(restaurants|length) %}
+			{% if i % 3 == 0 %}
+				<div class="row">
+			{% endif %}
+
+				<div class="col-md-4">
+					<a href="{{ restaurants[i][1] }}" class="restaurant-a">
+						<div class="list-restaurant-photo">
+							<img src="{{ restaurants[i][3] }}" width="100%" height="202">
+						</div>
+						<div class="restaurant-description">
+							<h3 style="margin-top: 0">{{ restaurants[i][1] }}</h3>
+							<p>{{ restaurants[i][2]|safe }}</p>
+						</div>
+					</a>
+				</div>
+
+			{% if i % 3 == 2 %}
+				</div>
+			{% elif i == restaurants|length - 1 %}
+				</div>
+			{% endif %}
+		{% endfor %}
+	</div>
+{% endblock %}

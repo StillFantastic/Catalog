@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="title">
+		{{ restaurant[1] }}
+	</div>
+
+	<div class="container">
+	{% for i in range(menus|length) %}
+		<div class="row">
+			<a href="/restaurant/{{ restaurant[1] }}/{{ menus[i][0] }}" class="menu-a">
+				<div class="col-md-4 col-md-offset-1">
+					<img src="{{ menus[i][4] }}" width="100%" height="300">
+				</div>
+				<div class="col-md-5 single-menu">
+					<div class="menu-name">
+						{{ menus[i][1] }}
+					</div>
+					<div class="menu-price">
+						${{ menus[i][2] }}
+					</div>
+					<div class="clear"></div>
+					<hr style="margin-top: 0px;">
+					<p class="description">{{ menus[i][3]|safe }}</p>
+				</div>
+			</a>
+		</div>
+		<br><br>
+	{% endfor %}
+	</div>
+{% endblock %}
+
+

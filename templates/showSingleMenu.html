@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="title">
+		{{ restaurant[1] }}
+	</div>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-md-4 col-md-offset-1">
+				<img src="{{ menu[4] }}" width="100%" height="300">
+			</div>
+			<div class="col-md-5 single-menu">
+				<div class="menu-name">
+					{{ menu[1] }}
+				</div>
+				<div class="menu-price">
+					${{ menu[2] }}
+				</div>
+				<div class="clear"></div>
+				<hr style="margin-top: 0px;">
+				<p class="description">{{ menu[3]|safe }}</p>
+			</div>
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<div class="container">
+		<div class="row">
+			<div class="alert alert-danger">
+				Are you sure you want to delete it?
+			</div>
+			<div class="col-md-1 col-md-offset-5 delete-btn">
+				<form method="post">
+					<button class="btn btn-success">Delete</button>
+				</form>
+			</div>
+			<div class="col-md-1 delete-btn">
+				<form method="get" action="{{ url_for("showSingleMenu", restaurant_name=restaurant_name, menu_id=menu_id) }}">
+					<button class="btn btn-default">Cancel</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}
